@@ -10,3 +10,6 @@ class Queue():
             return self.queue.pop(0)
         else:
             return None
+
+    def size(self):
+        return len(self.queue)
