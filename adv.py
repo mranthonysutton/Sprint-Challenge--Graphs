@@ -1,7 +1,6 @@
 from room import Room
 from player import Player
 from world import World
-from util import Queue
 
 import random
 from ast import literal_eval
@@ -14,7 +13,7 @@ world = World()
 # map_file = "maps/test_line.txt"
 # map_file = "maps/test_cross.txt"
 # map_file = "maps/test_loop.txt"
-#map_file = "maps/test_loop_fork.txt"
+# map_file = "maps/test_loop_fork.txt"
 map_file = "maps/main_maze.txt"
 
 # Loads the map into a dictionary
@@ -26,38 +25,56 @@ world.print_rooms()
 
 player = Player(world.starting_room)
 
+
+def reverse_direction(directions):
+    if directions is None:
+        return None
+
+    potential_dirs = ["n", "e", "s", "w"]
+    return potential_dirs[(potential_dirs.index(directions) + 2) % 4]
+
+
 # Fill this out with directions to walk
 # traversal_path = ['n', 'n']
-traversal_path = []
-visited = set()
-room_list = []
-
-
-def navigate_rooms(room):
-
-    room_list.append(room)
-    if room not in visited:
-        visited.add(room)
-        for key, id in room_graph[room][1].items():
-            if id not in visited:
-                navigate_rooms(id)
-                room_list.append(room)
-
-
-def room_directions(rooms):
-    for i in range(0, len(rooms) - 1):
-        for direction, room_id in room_graph[rooms[i]][1].items():
-            if room_id == rooms[i + 1]:
-                traversal_path.append(direction)
-
-
-navigate_rooms(player.current_room.id)
-room_directions(room_list)
-
 # TRAVERSAL TEST
 visited_rooms = set()
 player.current_room = world.starting_room
 visited_rooms.add(player.current_room)
+
+traversal_path = []
+
+prev_directions = []
+possible_directions = {}
+max_directions = {}
+
+prev_directions.append((player.current_room, None, None, 0))
+
+while len(prev_directions) > 0:
+    node = prev_directions[-1]
+    room = node[0]
+    last_direction = node[1]
+
+    if room.id not in possible_directions:
+        possible_directions[room.id] = set()
+
+    if last_direction is not None:
+        possible_directions[room.id].add(last_direction)
+
+    if len(possible_directions) == len(room_graph):
+        break
+
+    room_exists = room.get_exits()
+    possible_exists = [i for i in room_exists if i not in possible_directions[room.id]]
+
+    if len(possible_exists) > 0:
+        direction = random.choice(possible_exists)
+        room_to = room.get_room_in_direction(direction)
+        possible_directions[room.id].add(direction)
+        prev_directions.append((room_to, reverse_direction(direction)))
+        traversal_path.append(direction)
+    else:
+        traversal_path.append(last_direction)
+        prev_directions.pop(-1)
 
 for move in traversal_path:
     player.travel(move)
